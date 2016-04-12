@@ -1,64 +1,21 @@
-<script>
-
-$(document).ready(function(){
-
-    $('#object_user_username').on('change', function(){
-        var current = $(this).val();
-		// console.log(current);
-		$('#object_asset_id').html('<select required="required" class="validate[\'required\'] text-input" name="object_asset_id" id="object_asset_id" >'+'<option disabled selected value="">--กำลังโหลดกลุ่มสินทรพย์ของ '+current+'</option>'+'</select>');
-		// $('#object_asset_id').html();	
-		$.getJSON('/gpsv4/getAssetByUser.php',{
-			user_username : current
-		}, function (responses) {
-			console.log(responses);
-			$('#object_asset_id').html('<select required="required" class="validate[\'required\'] text-input" name="object_asset_id" id="object_asset_id" ></select>');
-			var options = '';
-			$(responses).each(function(index,response){
-				// console.log(response);
-				options += '<option value="'+response.asset_id+'">'+response.asset_name+'</option>'; // fetch options
-			});
-			if(options == ''){
-				options = '<option disabled selected value="">--ไม่มีกลุ่มสินทรัพย์ กรุณาเพิ่มกลุ่มสินทรัพย์</option>'; // fetch options
-			}
-			$('#object_asset_id').html(options); // add options
-			
-		});
-
-		
-    });
-		 /*$("#object_payment").click(function(){
-		if ($(this).val()=="บัตรเครดิต"||"เงินสด"||"จ่ายเช็ค") {
-                    $("#object_money").show();
-		
-                } 
-				if($(this).val()== ""){
-					$("#object_money").hide();
-				}
-		 }); */
-	//$("#object_money").onchange(function(){
-          //  if ($(this).val()=="") {
-			    // alert("กรอก กรอก กรอก");
-			//}
-     
-			//$('#object_name_sell').html(<?php echo $query_object["object_name_sell"]; ?>);
-//$('#object_payment_date').html("<?php echo $_POST["object_name_sell"]; ?>");
-//$('#object_payment_date').html("<?php echo $query_object["object_name_sell"]; ?>");
-
-  
-  $("#object_money").keypress(function (e) {
-    
-     if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
-        //display error message
-        $("#errmsg").html("Digits Only").show().fadeOut("slow");
-               return false;
-    }
-   });
-
-
-});
-</script>
-
 <?php
+/*
+function connect_imei($db){
+	
+		$host   = "103.246.18.170";// ชื่อโฮสต์
+		$user   = "imei";// ชื่อผู้ใช้
+		$pwd    = "goodjobOfpgs1452";// รหัสผ่านของฐานข้อมูล
+		$dbName = "IMEI";// ชื่อฐานข้อมูล
+		$db = mysql_connect($host, $user, $pwd) or die("เชื่อมต่อฐานข้อมูลฐานข้อมูลไม่ได้");// เชื่อมต่อฐานข้อมูล
+		
+		mysql_query("SET NAMES utf8");// ทำให้สนับสนุนฟอนต์ภาษาไทย
+		mysql_query("$dbName") or die(mysqli_error($db));// ตรวจสอบการเลือกฐานข้อมูล
+		return $db;
+	}
+*/
+
+
+
 if(isset($_SESSION["authen_admin"])){
 	if($_SESSION["user_usergroup_id"]==6){
 		$_COOKIE['config_menu'] = 'profileConfig.php';
@@ -83,13 +40,62 @@ if(isset($_SESSION["authen_admin"])){
 		<?php
 	}
 	if(isset($_POST["addobject"])){
+		$permission_a = "";
+		if($_SESSION["user_usergroup_id"]==4){
+				$permission_a = $_SESSION["user_username"];
+		}else{
 				$permission_a = $_POST["object_user_username"];
+		}
 		$sql_user  = "SELECT * FROM ".$table_prefix."_user where user_username='".$permission_a."' ";
 		$result_user = mysql_query($sql_user);
 		if(mysql_num_rows($result_user)>0){
-			$sql_object  = "SELECT * FROM ".$table_prefix."_object where object_IMEI='".$_POST["object_IMEI"]."' ";
+			$sql_object  = "SELECT * FROM ".$table_prefix."_object WHERE object_IMEI='".$_POST["object_IMEI"]."' ";
 			$result_object = mysql_query($sql_object);
 			if(mysql_num_rows($result_object)<=0){
+				//mysql_close($connect);
+				$connect1 = mysql_connect('103.246.18.170','imei','goodjobOfpgs1452');
+				mysql_query("SET NAMES UTF8");
+				mysql_select_db('IMEI');
+					$sql_imei ="SELECT imei FROM imei WHERE imei='".$_POST["object_IMEI"]."'";
+					$result_imei = mysql_query($sql_imei);
+					if(mysql_num_rows($result_imei)==1){
+						//print_r($connect);echo "<br>";var_dump($connect); echo "<br>"; var_dump(mysql_num_rows($result_imei)); echo "<br>"; 
+						//echo mysql_num_rows($result_imei);
+								//var_dump(mysql_num_rows($result_imei);
+							$sql_used ="SELECT used_imei FROM imei_used WHERE used_imei='".$_POST["object_IMEI"]."'";
+							$result_used = mysql_query($sql_used);
+							if(mysql_num_rows($result_used)<=0){
+								$num_rows = mysql_num_rows($result_used);
+
+						
+						$sql_used = "INSERT INTO imei_used (used_imei,
+														used_dateupdate,
+														used_add_name,
+														used_sim,
+														used_box_id,
+														used_money,
+														used_payment)
+												 VALUES('".$_POST["object_IMEI"]."',
+												 		'".date("Y-m-d H:i:s")."',
+												 		'add_name',
+												 		'".$_POST["object_simnumber"]."',
+												 		'".$_POST["object_box_id"]."',
+												 		'money',
+												 		'payment'
+												 					 	
+												 	)";
+						$result_used = mysql_query($sql_used);
+						mysql_close($connect1);
+
+					}else{ ?>
+								<script language="javascript">
+										alert("หมายเลข IMEI ซ่ำในระบบ, กรุณาเปลี่ยนหมายเลข IMEI");
+								</script>
+								<?php return ?>
+				<?php
+					}
+				require('../connect_db/connect.php');		
+		if(mysql_num_rows($result_object)<=0 && $num_rows<=1){
 				$sql = "INSERT INTO ".$table_prefix."_object(object_IMEI
 				,object_user_username
 				,object_asset_id,object_categories_id
@@ -132,19 +138,13 @@ if(isset($_SESSION["authen_admin"])){
 				,object_camera
 				,object_oil_mail
 				,object_oil_sms
-				,object_register_type
-				,object_add_by";
+				,object_register_type";
 if($_POST["object_magnetic_reader"] === "0" || $_POST["object_magnetic_reader"] === "1"){
  $sql .=",object_magnetic_reader";
 }
 if($_POST["object_dlt"] === "0" || $_POST["object_dlt"] === "1"){
  $sql .=",object_dlt";
 }
-
-$sql .=",object_name_sell";
-$sql .=",object_payment";
-$sql .=",object_payment_date";
-$sql .=",object_money";
  $sql .=") VALUES(
 				'".$_POST["object_IMEI"]."'
 				,'".$permission_a."'
@@ -192,42 +192,38 @@ $sql .=",object_money";
 				,'".$_POST["object_camera"]."'
 				,'".$_POST["object_oil_mail"]."'
 				,'".$_POST["object_oil_sms"]."'
-				,'".$_POST["object_register_type"]."'
-				,'".$_SESSION['user_username']."'";
+				,'".$_POST["object_register_type"]."'";
 if($_POST["object_magnetic_reader"] === "0" || $_POST["object_magnetic_reader"] === "1"){
  $sql .=",'".$_POST["object_magnetic_reader"]."'";
 }
 if($_POST["object_dlt"] === "0" || $_POST["object_dlt"] === "1"){
  $sql .=",'".$_POST["object_dlt"]."'";
 }
-
-$sql .=",'".$_POST["object_name_sell"]."'";
-$sql .=",'".$_POST["object_payment"]."'";
-$sql .=",'".date("Y-m-d H:i:s")."'";
-$sql .=",'".$_POST["object_money"]."'";
-	$sql .=")";
+	$sql .=")";	
 				$result = mysql_query($sql) or die(mysql_error());
-				
-				// ADD DLT 's MASTER FILE
-				if($_POST["object_dlt"] === "1"){
-					include("masterFileService.php");
-					addOrUpdateMasterFile($_POST);
-
-				}
-				
 				?>
 				<script language="javascript">
 					alert("เพิ่มสินทรัพย์สำเร็จ.");
 					window.location ="?";
 				</script>
-				<?php
+		<?php 
+			}?>
+				
+			<?php
 			}else{
 				?>
 				<script language="javascript">
-					alert("หมายเลข IMEI ถูกใช้งานแล้ว, กรุณาเปลี่ยนหมายเลข IMEI");
+					alert("หมายเลข IMEI ไม่มีในระบบ, กรุณาเปลี่ยนหมายเลข IMEI");
 				</script>
 				<?php
 			}
+		}else{
+				?>
+				<script language="javascript">
+					alert("หมายเลข IMEI ผิดพลาด, กรุณาเปลี่ยนหมายเลข IMEI");
+				</script>
+				<?php
+		}
 		}else{
 				?>
 				<script language="javascript">
@@ -238,94 +234,10 @@ $sql .=",'".$_POST["object_money"]."'";
 	}
 	if(isset($_POST["editobject"])){
 		if($_SESSION["user_usergroup_id"]==4){
-						// $permission_a = " and object_user_username='".$_SESSION["user_username"]."'";
-			// $permission2= " object_asset_id='".$_POST["object_asset_id"]."', ";
-			if($_SESSION["user_usergroup_id"]==1){
-			$permission2 = " object_user_username='".$_POST["object_user_username"]."', ";
-			$permission2 .= " object_asset_id='".$_POST["object_asset_id"]."', ";
+			$permission_a = " and object_user_username='".$_SESSION["user_username"]."'";
+			$permission2= " object_asset_id='".$_POST["object_asset_id"]."', ";
 		}
-		if($_SESSION["user_usergroup_id"]==6){
-			$permission_a = " and object_id in (".$_SESSION['user_object_id'].") ";
-			// $permission2= " object_asset_id='".$_POST["object_asset_id"]."', ";
-		}
-		if ($_POST['object_car_mile'] != $_POST['old_object_car_mile']){
-			$changeMaintenanceMile = "object_car_maintenance_tyre_mile = '".$_POST["object_car_mile"]."',
-			object_car_maintenance_oil_mile = '".$_POST["object_car_mile"]."',";
-		} else $changeMaintenanceMile = "";
-		$sql = "Update  ".$table_prefix."_object SET ".$permission2."
-			
-			
-			object_name='".$_POST["object_name"]."',
-			object_driver='".$_POST["object_driver"]."',
-			object_number='".$_POST["object_number"]."',
-			object_color='".$_POST["object_color"]."',
-			object_overspeed='".$_POST["object_overspeed"]."',
-			object_oilconsume='".$_POST["object_oilconsume"]."',
-			object_ngvconsume='".$_POST["object_ngvconsume"]."',
-			object_oilconsume2='".$_POST["object_oilconsume2"]."',
-			object_ngvconsume2='".$_POST["object_ngvconsume2"]."',
-			object_oil='".$_POST["emty_oil"]."|".$_POST["full_oil"]."',
-			
-			
-			object_active='".$_POST["object_active"]."',
-			object_AD2='".$_POST["emty_ngv"]."|".$_POST["full_ngv"]."',
-			object_input4='".$_POST["object_input4"]."',
-			object_input1='".$_POST["object_input1"]."',
-			object_input2='".$_POST["object_input2"]."',
-			object_input3='".$_POST["object_input3"]."',
-			object_inputAD1='".$_POST["object_inputAD1"]."',
-			object_inputAD2='".$_POST["object_inputAD2"]."',
-			object_fueltype='".$_POST["object_fueltype"]."',
-			object_AD1LH='".$_POST["min_AD1"]."|".$_POST["max_AD1"]."',
-			object_number_province='".$_POST["object_number_province"]."',
-			object_car_model='".$_POST["object_car_model"]."',
-			object_car_chassis='".$_POST["object_car_chassis"]."',
-			object_car_type='".$_POST["object_car_type"]."',
-			object_car_approve_id='".$_POST["object_car_approve_id"]."',
-			object_car_mile='".$_POST["object_car_mile"]."',".$changeMaintenanceMile."
-			object_car_maintenance_tyre = '".$_POST["object_car_maintenance_tyre"]."',
-			object_car_maintenance_oil = '".$_POST["object_car_maintenance_oil"]."',
-			object_car_last_check = now(),
-			object_check_poi = '".$_POST["object_check_poi"]."',
-			object_oil_tank = '".$_POST["object_oil_tank"]."',
-			object_ngv_tank = '".$_POST["object_ngv_tank"]."',
-			object_park_limit = '".$_POST["object_park_limit"]."',
-			object_overtemp = '".$_POST["object_overtemp"]."',
-			object_temp_sensor = '".$_POST["object_temp_sensor"]."',
-			object_camera = '".$_POST["object_camera"]."',
-			object_oil_mail = '".$_POST["object_oil_mail"]."',
-			object_oil_sms = '".$_POST["object_oil_sms"]."',
-			object_check_zone = '".$_POST["object_check_zone"]."',
-			object_over_park_alert = '".$_POST["object_over_park_alert"]."',
-			object_register_type = '".$_POST["object_register_type"]."'";
-if($_POST["object_magnetic_reader"] === "0" || $_POST["object_magnetic_reader"] === "1"){
-$sql .=",object_magnetic_reader = '".$_POST["object_magnetic_reader"]."'";
-}
-
-
-$sql .="where object_id=".$_POST["object_id"]." ".$permission_a;
-			mysql_query($sql) or die(mysql_error());
-
-		
-			?>
-			
-		<script language="javascript">
-			alert("แก้ไขข้อมูลสินทรัพย์สำเร็จ");
-			window.location ="?";
-		</script>
-		<?php
-
-
-	//usergroupid!=4	------------------------------------------------------------------------------
-
-
-		}else{
-	
-		// if($_SESSION["user_usergroup_id"]==4){
-			// $permission_a = " and object_user_username='".$_SESSION["user_username"]."'";
-			// $permission2= " object_asset_id='".$_POST["object_asset_id"]."', ";
-		// }
-		if($_SESSION["user_usergroup_id"]==1 || $_SESSION["user_usergroup_id"]==8){
+		if($_SESSION["user_usergroup_id"]==1){
 			$permission2 = " object_user_username='".$_POST["object_user_username"]."', ";
 			$permission2 .= " object_asset_id='".$_POST["object_asset_id"]."', ";
 		}
@@ -383,50 +295,24 @@ $sql .="where object_id=".$_POST["object_id"]." ".$permission_a;
 			object_oil_sms = '".$_POST["object_oil_sms"]."',
 			object_check_zone = '".$_POST["object_check_zone"]."',
 			object_over_park_alert = '".$_POST["object_over_park_alert"]."',
-			object_register_type = '".$_POST["object_register_type"]."',
-			object_name_sell = '".$_POST["object_name_sell"]."',
-			object_payment = '".$_POST["object_payment"]."',
-			object_payment_date = '".date("Y-m-d H:i:s")."',
-			object_money = '".$_POST["object_money"]."'
-			
-			";
+			object_register_type = '".$_POST["object_register_type"]."'";
 if($_POST["object_magnetic_reader"] === "0" || $_POST["object_magnetic_reader"] === "1"){
 $sql .=",object_magnetic_reader = '".$_POST["object_magnetic_reader"]."'";
 }
-
-if($_SESSION["user_usergroup_id"]==1){
 if($_POST["object_dlt"] === "0" || $_POST["object_dlt"] === "1"){
 $sql .=",object_dlt = '".$_POST["object_dlt"]."'";
 }
-}
-
-//$sql .=",object_name_sell = '".$_POST["object_name_sell"]."'";
-//$sql .=",object_payment = '".$_POST["object_payment"]."'";
-//$sql .=",object_payment_date = '".date("Y-m-d H:i:s")."'";
-//$sql .=",object_money = '".$_POST["object_money"]."'";
 
 $sql .="where object_id=".$_POST["object_id"]." ".$permission_a;
 			mysql_query($sql) or die(mysql_error());
 
-			// UPDATE DLT 's MASTER FILE
-			if($_SESSION["user_usergroup_id"]==1){
-			if($_POST["object_dlt"] === "1"){
-					include("masterFileService.php");
-					addOrUpdateMasterFile($_POST);
-			}else{
-				include("masterFileService.php");
-				// echo "<script> alert('updateMasterFile'); </script>";
-				updateMasterFile($_POST);
-			}
-			}
 		?>
 		<script language="javascript">
 			alert("แก้ไขข้อมูลสินทรัพย์สำเร็จ");
 			window.location ="?";
 		</script>
 		<?php
-			} 
-		}
+	}
 if(isset($_REQUEST["Action_type"])){
 	?>
 	<DIV class="">
@@ -435,6 +321,7 @@ if(isset($_REQUEST["Action_type"])){
 				new FormCheck('addObjectForm');
 			});
 		</SCRIPT>
+	<!-- <?php echo $connect; ?> -->
 	<form name="addObjectForm" id="addObjectForm" action="?" method="post" enctype="multipart/form-data">
 	<TABLE  border="0" cellpadding="1" cellspacing="0" width="100%" style="font-size:12px;font-weight:bold;color:#969696;max-width:700px;margin:0 auto;">
 	<TR>
@@ -456,64 +343,6 @@ if(isset($_REQUEST["Action_type"])){
 	}else{?>
 		<input type="hidden" name="addobject" value="1">
 	<?php }?>
-	<?php if($_SESSION["user_usergroup_id"] == 8 || $_SESSION["user_usergroup_id"] == 1){ ?>
-	<!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
-		<tr>
-		<td colspan="3">
-			<hr>
-			<strong>Data Sell Section</strong>
-		</td>
-	</tr>
-	<TR>
-		<TD align="right">ชื่อผู้ขาย &raquo; </TD>
-		<TD>&nbsp;</TD>
-		<TD align="left">
-			<input required="required type="text" class="validate['required'] text-input"  name="object_name_sell" id="object_name_sell" oninvalid="setCustomValidity('กรุณากรอกชื่อผู้ขาย')" onchange="try{setCustomValidity('')}catch(e){}" value="<?=$query_object["object_name_sell"]?><?=$_POST["object_name_sell"]?>" size="15"> <FONT COLOR="red">*</FONT>
-		</TD>
-	</TR>
-	
-	<TR>
-		<TD align="right">การชำระ &raquo;</TD>
-		<TD>&nbsp;</TD>
-		<TD align="left">
-			<select name="object_payment" id="object_payment" required="required" oninvalid="setCustomValidity('กรุณาเลือกประเภทการชำระเงิน')" onchange="try{setCustomValidity('')}catch(e){}" >
-				<option value="">---เลือการชำระเงิน---</option>
-				<option value="บัตรเครดิต">บัตรเครดิต</option>
-				<option value="เงินสด">เงินสด</option>
-				<option value="จ่ายเช็ค">จ่ายเช็ค</option>
-			</select> <FONT COLOR="red">*</FONT>
-			<script>
-			  	  	document.getElementById('object_payment').value = '<?php echo $query_object['object_payment'];?>';
-			  	  </script>
-		</TD>
-	</TR>
-	<TR  id="object_money">
-		<TD align="right">จำนวนเงิน &raquo;</TD>
-		<TD>&nbsp;</TD>
-		<TD align="left">
-			<input type="text" required="required" oninvalid="setCustomValidity('กรุณากรอกจำนวนเงิน')" onchange="try{setCustomValidity('')}catch(e){}"  class="validate['required'] text-input" name="object_money" id="object_money" value="<?=$query_object["object_money"]?><?=$_POST["object_money"]?>" size="15"> บาท  <FONT COLOR="red">*</FONT>
-		</TD>
-	</TR>
-			<?php
-			
-    $date = $query_object["object_payment_date"];
-
-				  $phpdate = strtotime($date);
-					$mysqldate = date( 'Y-m-d', $phpdate );
-			?>
-
-	<TR>
-		<TD align="right">วันที่จะชำระ &raquo;</TD>
-		<TD>&nbsp;</TD>
-		<TD align="left">
-			<input type="date" name="object_payment_date" id="object_payment_date" 
-			value="<?=$mysqldate?>"> <FONT COLOR="red">*</FONT>
-		</TD>
-	</TR>
-	
-
-	<!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
-	<?php } ?>
 	<tr>
 		<td colspan="3">
 			<hr>
@@ -524,29 +353,11 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right" valign="top">Username &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<?php if($_SESSION["user_usergroup_id"]==4){?>
-			<TD  align="left"><?=$query_object["object_user_username"]?></TD>
+			<TD  align="left"><?=$_SESSION["user_username"]?></TD>
 		<?php }else{?>
 			<TD align="left" valign="top">
-					<SELECT required="required" class="validate['required'] text-input" name="object_user_username" id="object_user_username">
-					<OPTION value="" disabled selected >---เลือก user---</OPTION>
-					<?php			
-						$user_permission = "";
-						if($_SESSION["user_usergroup_id"]==8){
-							$user_permission = " AND user_add_by = '{$_SESSION["user_username"]}'";
-						}
-						$sql_user = "SELECT * FROM gps_user WHERE 1=1 ".$user_permission;
-						$result_user = mysql_query($sql_user);
-						if(mysql_num_rows($result_user)>0){
-							while($query_user = mysql_fetch_assoc($result_user)){
-							?>
-								<OPTION value="<?=$query_user["user_username"]?>" <? if($query_user["user_username"]==$query_object["object_user_username"]||$query_user["user_username"]==$_POST["object_user_username"]){ echo "selected"; } ?> ><?=$query_user["user_username"]?></OPTION>
-							<?php
-							}
-						}
-					?>
-			</SELECT> 
 				<input type="hidden" name="object_user_username_old" id="object_user_username_old" value="<?=$query_object["object_user_username"]?><?=$_POST["object_user_username"]?>">
-				<!--<input type="text" class="validate['required'] text-input" name="object_user_username" id="object_user_username" value="<?=$query_object["object_user_username"]?><?=$_POST["object_user_username"]?>"> <?php if($_SESSION["user_usergroup_id"]<3 || $_SESSION["user_usergroup_id"] == 8){?><a href="#" onclick="document.getElementById('searchUser1').style.display='block';document.getElementById('searchUser2').style.display='block';"><img src="images/profiles.png" border="0"><span class="configSubMenuActive">?????</span></a><?php }?>-->
+				<input type="text" class="validate['required'] text-input" name="object_user_username" id="object_user_username" value="<?=$query_object["object_user_username"]?><?=$_POST["object_user_username"]?>"> <?php if($_SESSION["user_usergroup_id"]<3){?><a href="#" onclick="document.getElementById('searchUser1').style.display='block';document.getElementById('searchUser2').style.display='block';"><img src="images/profiles.png" border="0"><span class="configSubMenuActive">?????</span></a><?php }?>
 			</TD>
 		<?php }?>
 	</TR>
@@ -561,73 +372,57 @@ if(isset($_REQUEST["Action_type"])){
 				</div>
 		</TD>
 	</TR>
-	
 	<TR>
 		<TD align="right">กลุ่ม &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<SELECT required="required" class="validate['required'] text-input" name="object_asset_id" id="object_asset_id" oninvalid="setCustomValidity('กรุณาเลือกกลุ่มสินทรัพย์')" onchange="try{setCustomValidity('')}catch(e){}">
-				<OPTION value="" disabled selected >---เลือกกลุ่ม---</OPTION>
+			<SELECT class="validate['required'] text-input" name="object_asset_id" id="object_asset_id">
+				<OPTION value="">---เลือกกลุ่ม---</OPTION>
 				<?php
-					$permission = "";
-					if($_SESSION["user_usergroup_id"]==4){
-						$permission = " and asset_user_id=".$_SESSION["user_id"];
-					}else if($_SESSION["user_usergroup_id"]==8){
-						$permission = " and user_add_by = '".$_SESSION["user_username"]."'";
-					}else{
-						$permission = " and asset_name<>'Buddy' and  asset_name<>'Personal' ";
-					}
-
-					$sql_search = "SELECT * 
-									FROM ".$table_prefix."_asset,".$table_prefix."_user 
-									WHERE ".$table_prefix."_asset.asset_user_id=".$table_prefix."_user.user_id 
-									AND not ".$table_prefix."_asset.asset_name='' ".$permission." ".$orderby;
-					$result_asset = mysql_query($sql_search);
-					for($i_asset=1;$i_asset<=mysql_num_rows($result_asset);$i_asset++){
+				if($_SESSION["user_usergroup_id"]==1){
+					$result_asset = mysql_query("select * from ".$table_prefix."_asset where asset_id=".$query_object["object_asset_id"]);
+					if(mysql_num_rows($result_asset)>0){
 						$query_asset = mysql_fetch_array($result_asset, MYSQL_ASSOC);
+						?>
+						<OPTION value="<?=$query_asset["asset_id"]?>" selected><?=$query_asset["asset_name"]?> [Old Group]</OPTION>
+						<?php
+					}
+				}
+				$result_asset = mysql_query("select * from ".$table_prefix."_asset where asset_user_id=".$_SESSION["user_id"]." order by asset_id DESC");
+				for($i_asset=1;$i_asset<=mysql_num_rows($result_asset);$i_asset++){
+					$query_asset = mysql_fetch_array($result_asset, MYSQL_ASSOC);
 					?>
-						<OPTION value="<?=$query_asset["asset_id"]?>" <?php if($query_asset["asset_id"]==$query_object["object_asset_id"]||$query_asset["asset_id"]==$_POST["object_asset_id"]){echo "selected";}?>><?=$query_asset["asset_name"]?></OPTION>
+					<OPTION value="<?=$query_asset["asset_id"]?>" <?php if($query_asset["asset_id"]==$query_object["object_asset_id"]||$query_asset["asset_id"]==$_POST["object_asset_id"]){echo "selected";}?>><?=$query_asset["asset_name"]?></OPTION>
 					<?php
 				}
 				?>
-			</SELECT>  <FONT COLOR="red">*</FONT>
+			</SELECT>
 		</TD>
 	</TR>
-	
 	<TR>
 		<TD align="right">IMEI &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
 			<input type="hidden" name="object_IMEI_old" id="object_IMEI_old" value="<?=$query_object["object_IMEI"]?><?=$_POST["object_IMEI"]?>">
-			<input type="text" required="required" class="validate['required'] text-input"  name="object_IMEI" id="object_IMEI" value="<?=$query_object["object_IMEI"]?><?=$_POST["object_IMEI"]?>" 
-			
-			<?php 
-					if($_SESSION["user_usergroup_id"]==4)
-						{ 
-							echo "disabled='disabled'"; 
-						}
-			?>
-			
-			> <FONT COLOR="red">*</FONT>
-		</TD>
+			<input type="text" required="required" class="validate['required'] text-input"  name="object_IMEI" id="object_IMEI" value="<?=$query_object["object_IMEI"]?><?=$_POST["object_IMEI"]?>"> *
 		</TD>
 	</TR>
 	<TR>
 		<TD align="right">รหัสผ่านอุปกรณ์ &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" class="validate['required'] text-input"  name="object_gpsboxpassword" id="object_gpsboxpassword" value="<?=$query_object["object_gpsboxpassword"]?><?=$_POST["object_gpsboxpassword"]?>" <?php if($_SESSION["user_usergroup_id"]==4){ echo "disabled='disabled'"; }?>>
+			<input type="text" class="validate['required'] text-input"  name="object_gpsboxpassword" id="object_gpsboxpassword" value="<?=$query_object["object_gpsboxpassword"]?><?=$_POST["object_gpsboxpassword"]?>">
 		</TD>
 	</TR>
 	<TR>
 		<TD align="right">SIM No. &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" class="validate['required'] text-input"  name="object_simnumber" id="object_simnumber" value="<?=$query_object["object_simnumber"]?><?=$_POST["object_simnumber"]?>" <?php if($_SESSION["user_usergroup_id"]==4){ echo "disabled='disabled'"; }?>> <FONT COLOR="red">*</FONT>
+			<input type="text" class="validate['required'] text-input"  name="object_simnumber" id="object_simnumber" value="<?=$query_object["object_simnumber"]?><?=$_POST["object_simnumber"]?>">
 		</TD>
 	</TR>
 	<TR>
-		<TD align="right">รถลำดับที่ &raquo; </TD>
+		<TD align="right">ชื่อทรัพย์สิน &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
 			<input type="hidden" name="object_name_old" id="object_name_old" value="<?=$query_object["object_name"]?><?=$_POST["object_name"]?>">
@@ -645,7 +440,7 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right" valign="top">ประเภททรัพย์สิน &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<SELECT required="required" class="validate['required'] text-input" name="object_categories_id" id="object_categories_id" <?php if($_SESSION["user_usergroup_id"]==4){ echo "disabled='disabled'"; }?>>
+			<SELECT class="validate['required'] text-input" name="object_categories_id" id="object_categories_id">
 				<OPTION value="">---เลือกประเภททรัพย์สิน---</OPTION>
 				<?php
 				$result_categories = mysql_query("select * from ".$table_prefix."_categories order by categories_id DESC");
@@ -656,14 +451,14 @@ if(isset($_REQUEST["Action_type"])){
 					<?php
 				}
 				?>
-			</SELECT> <FONT COLOR="red">*</FONT>
+			</SELECT>
 		</TD>
 	</TR>
 	<TR>
 		<TD align="right" valign="top">ใช้กล่องรุ่น &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<SELECT required="required" class="validate['required'] text-input" name="object_box_id" id="object_box_id" <?php if($_SESSION["user_usergroup_id"]==4){ echo "disabled='disabled'"; }?>>
+			<SELECT class="validate['required'] text-input" name="object_box_id" id="object_box_id">
 				<OPTION value="">---เลือกรุ่นของกล่อง---</OPTION>
 				<?php
 				$result_box = mysql_query("select * from ".$table_prefix."_box order by box_id DESC");
@@ -674,7 +469,7 @@ if(isset($_REQUEST["Action_type"])){
 					<?php
 				}
 				?>
-			</SELECT> <FONT COLOR="red">*</FONT>
+			</SELECT>
 		</TD>
 	</TR>
 
@@ -682,7 +477,7 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right">ป้ายทะเบียน &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" pattern="([0-9]?[ก-ฮ]{2}|[0-9]{2})-[0-9]{1,4}$" oninvalid="setCustomValidity('กรุณากรอกป้ายทะเบียนตามความจริง')" onchange="try{setCustomValidity('')}catch(e){}"  class="validate['required'] text-input"  name="object_number" id="object_number" value="<?=$query_object["object_number"]?><?=$_POST["object_number"]?>"> <FONT COLOR="red">*</FONT> [xx-xxxx] หรือ [xxx-xxxx]
+			<input required="required" type="text" pattern="([0-9]?[ก-ฮ]{2}|[0-9]{2})-[0-9]{1,4}$" oninvalid="setCustomValidity('กรุณากรอกป้ายทะเบียนตามความจริง')" onchange="try{setCustomValidity('')}catch(e){}"  class="validate['required'] text-input"  name="object_number" id="object_number" value="<?=$query_object["object_number"]?><?=$_POST["object_number"]?>"> * [xx-xxxx] หรือ [xxx-xxxx]
 		</TD>
 	</TR>
 	<TR>
@@ -720,15 +515,15 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right">จังหวัด &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<SELECT required="required" class="validate['required'] text-input" name="object_number_province" id="object_number_province" oninvalid="setCustomValidity('กรุณาระบุจังหวัด')" onchange="try{setCustomValidity('')}catch(e){}">
+			<SELECT required="required" class="validate['required'] text-input" name="object_number_province" id="object_number_province" oninvalid="setCustomValidity('กรุณาระบุจังหวัด')" onchange="try{setCustomValidity('')}catch(e){}" >
 <option selected disabled value="">---- กรุณาเลือกจังหวัด ----</option>
 <option value="กระบี่">กระบี่</option><option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กาญจนบุรี">กาญจนบุรี</option><option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ขอนแก่น">ขอนแก่น</option><option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี">ชลบุรี</option><option value="ชัยนาท">ชัยนาท</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="ชุมพร">ชุมพร</option><option value="เชียงราย">เชียงราย</option><option value="เชียงใหม่">เชียงใหม่</option><option value="ตรัง">ตรัง</option><option value="ตราด">ตราด</option><option value="ตาก">ตาก</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="นราธิวาส">นราธิวาส</option><option value="น่าน">น่าน</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="ปทุมธานี">ปทุมธานี</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ปัตตานี">ปัตตานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พะเยา">พะเยา</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบุรี">เพชรบุรี</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="แพร่">แพร่</option><option value="ภูเก็ต">ภูเก็ต</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option><option value="ยโสธร">ยโสธร</option><option value="ยะลา">ยะลา</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="ระนอง">ระนอง</option><option value="ระยอง">ระยอง</option><option value="ราชบุรี">ราชบุรี</option><option value="ลพบุรี">ลพบุรี</option><option value="ลำปาง">ลำปาง</option><option value="ลำพูน">ลำพูน</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระแก้ว">สระแก้ว</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อ่างทอง">อ่างทอง</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุตรดิตถ์">อุตรดิตถ์</option><option value="อุทัยธานี">อุทัยธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option>
-			</SELECT> <FONT COLOR="red">*</FONT>
+			</SELECT> *
 			<?php
 			  if (isset($query_object['object_number_province'])){
 			  	?>
 			  	  <script>
-			  	  	document.getElementById('object_number_province').value = '<?php echo $query_object['object_number_province'];?><?=$_POST["object_number_province"]?>';
+			  	  	document.getElementById('object_number_province').value = '<?php echo $query_object['object_number_province'];?>';
 			  	  </script>
 			  	<?php
 			  }
@@ -740,14 +535,14 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right">ยี่ห้อรถ &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" required="required" pattern="^[A-Z]*$" oninvalid="setCustomValidity('กรุณากรอก ภาษาอังกฤษตัวพิมพ์ใหญ่เท่านั้น')" onchange="try{setCustomValidity('')}catch(e){}" required="required" quired class="validate['required'] text-input"  name="object_car_model" id="object_car_model" value="<?=$query_object["object_car_model"]?><?=$_POST["object_car_model"]?>"> <FONT COLOR="red">*</FONT> ภาษาอังกฤษ ตัวพิมพ์ใหญ่เท่านั้น
+			<input type="text" required="required" pattern="^[A-Z]*$" oninvalid="setCustomValidity('กรุณากรอก ภาษาอังกฤษตัวพิมพ์ใหญ่เท่านั้น')" onchange="try{setCustomValidity('')}catch(e){}" required="required" quired class="validate['required'] text-input"  name="object_car_model" id="object_car_model" value="<?=$query_object["object_car_model"]?><?=$_POST["object_car_model"]?>"> * ภาษาอังกฤษ ตัวพิมพ์ใหญ่เท่านั้น
 		</TD>
 	</TR>
 	<TR>
 		<TD align="right">หมายเลขคัสซี &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" required="required" pattern="[A-Z0-9]{5,}$" oninvalid="setCustomValidity('กรุณารอก หมายเลขคัสซีตามความจริง')" onchange="try{setCustomValidity('')}catch(e){}"  class="validate['required'] text-input"  name="object_car_chassis" id="object_car_chassis" value="<?=$query_object["object_car_chassis"]?><?=$_POST["object_car_chassis"]?>"> <FONT COLOR="red">*</FONT>
+			<input type="text" required="required" pattern="[A-Z0-9]{5,}$" oninvalid="setCustomValidity('กรุณารอก หมายเลขคัสซีตามความจริง')" onchange="try{setCustomValidity('')}catch(e){}"  class="validate['required'] text-input"  name="object_car_chassis" id="object_car_chassis" value="<?=$query_object["object_car_chassis"]?><?=$_POST["object_car_chassis"]?>"> *
 		</TD>
 	</TR>
 	<TR>
@@ -904,7 +699,7 @@ if(isset($_REQUEST["Action_type"])){
 				<option value="2900">รถบรรทุก ลักษณะ 9 ไมไ่ด้ระบุประเภทรถ </option>
 				<option value="2910">รถบรรทุก ลักษณะ 9 ส่วนบุคคล </option>
 				<option value="2920">รถบรรทุก ลักษณะ 9 ไม่ประจำทาง</option>
-			</select> <FONT COLOR="red">*</FONT>
+			</select> *
 			<script>
 			document.getElementById('object_register_type').value = '<?=$query_object["object_register_type"]?><?=$_POST["object_register_type"]?>';
 			</script>
@@ -917,7 +712,7 @@ if(isset($_REQUEST["Action_type"])){
 			<input type="text" class="validate['required'] text-input"  name="object_car_approve_id" id="object_car_approve_id" value="<?=$query_object["object_car_approve_id"]?><?=$_POST["object_car_approve_id"]?>">
 		</TD>
 	</TR>
-	<? if($_SESSION["user_usergroup_id"]==1 || $_SESSION["user_usergroup_id"]==8){ ?>
+	<? if($_SESSION["user_usergroup_id"]==1){ ?>
 	<TR>
 		<TD align="right">เครื่องอ่านบัตร &raquo; </TD>
 		<TD>&nbsp;</TD>
@@ -932,10 +727,9 @@ if(isset($_REQUEST["Action_type"])){
 			</script>
 		</TD>
 	</TR>
-	<? if($_SESSION["user_usergroup_id"]!=8){ ?>
 	<TR>
 		<TD align="right">ส่งข้อมูลให้กรมขนส่งทางบก &raquo; </TD>
-			<TD>&nbsp;</TD>
+		<TD>&nbsp;</TD>
 		<TD align="left">
 				<select name="object_dlt" id="object_dlt">
 				<option value="">กรุณาเลือก</option>
@@ -947,7 +741,6 @@ if(isset($_REQUEST["Action_type"])){
 			</script>
 		</TD>
 	</TR>
-<? } ?>
 	<? } ?>
 	<tr>
 		<td colspan="3">
@@ -1090,7 +883,7 @@ if(isset($_REQUEST["Action_type"])){
 		<TD align="right">จำกัดความเร็ว &raquo;</TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
-			<input type="text" class="validate['required'] text-input" name="object_overspeed" id="object_overspeed" value="<?php if($query_object["object_overspeed"]==null){echo "70";}else{ echo $query_object["object_overspeed"]?><?=$_POST["object_overspeed"];}?>" size="10"> กม./ชม.
+			<input type="text" class="validate['required'] text-input" name="object_overspeed" id="object_overspeed" value="<?=$query_object["object_overspeed"]?><?=$_POST["object_overspeed"]?>" size="10"> กม./ชม.
 		</TD>
 	</TR>
 	<TR>
@@ -1100,7 +893,6 @@ if(isset($_REQUEST["Action_type"])){
 			<input type="text" class="validate['required'] text-input" name="object_overtemp" id="object_overtemp" value="<?=$query_object["object_overtemp"]?><?=$_POST["object_overtemp"]?>" size="5"> &deg;C
 		</TD>
 	</TR>
-	<TR>
 	<TD align="right">การแจ้งเตือนจอดรถติดเครื่องนานกว่ากำหนด &raquo; </TD>
 		<TD>&nbsp;</TD>
 		<TD align="left">
@@ -1120,8 +912,7 @@ if(isset($_REQUEST["Action_type"])){
 			<input type="text" class="validate['required'] text-input" name="object_park_limit" id="object_park_limit" value="<?=$query_object["object_park_limit"]?><?=$_POST["object_park_limit"]?>" size="10"> นาที
 		</TD>
 	</TR>
-	<? if($_SESSION["user_usergroup_id"]==1 || $_SESSION["user_usergroup_id"]==8){ ?>
-	<tr id="Input">
+	<tr>
 		<td colspan="3">
 			<hr>
 			<strong>Input Section</strong>
@@ -1189,11 +980,10 @@ if(isset($_REQUEST["Action_type"])){
 			<input type="text" class="validate['required'] text-input"  name="object_input4" id="object_input4" value="<?=$query_object["object_input4"]?><?=$_POST["object_input4"]?>" size="4">
 		</TD>
 	</TR> -->
-	<? } ?>
 	<TR>
 		<TD colspan="3">&nbsp;</TD>
 	</TR>
-	<TR id="submit">
+	<TR>
 		<TD>&nbsp;</TD>
 		<TD align="left">&nbsp;</TD>
 		<TD align="left">
@@ -1209,7 +999,6 @@ if(isset($_REQUEST["Action_type"])){
 	<TR>
 		<TD colspan="3">&nbsp;</TD>
 	</TR>
-	
 	</TABLE>
 	</form>
 	</DIV>
@@ -1245,8 +1034,6 @@ if(isset($_REQUEST["Action_type"])){
 			$permission = " and ".$table_prefix."_object.object_user_username='".$_SESSION["user_username"]."'";
 	} else if($_SESSION["user_usergroup_id"]==6){
 			$permission = " and object_id in (".$_SESSION['user_object_id'].") ";
-	} else if($_SESSION["user_usergroup_id"]==8){
-			$permission = " and object_add_by ='".$_SESSION['user_username']."' ";
 	}
 	$sql_search = "SELECT * FROM ".$table_prefix."_object,".$table_prefix."_user,".$table_prefix."_categories,".$table_prefix."_asset WHERE ".$table_prefix."_object.object_user_username=".$table_prefix."_user.user_username and  ".$table_prefix."_object.object_categories_id=".$table_prefix."_categories.categories_id and ".$table_prefix."_object.object_asset_id=".$table_prefix."_asset.asset_id ".$permission." ".$orderby;
 
@@ -1274,13 +1061,11 @@ if(isset($_REQUEST["Action_type"])){
 		<TD><?=$query_object["categories_name"]?>&nbsp;</TD>
 		<TD>
 			 <?php
-			// if($_SESSION["user_usergroup_id"]==1 || $_SESSION["user_usergroup_id"]==8 ){
+			if($_SESSION["user_usergroup_id"]==1 || strtolower($query_object["object_user_username"])==strtolower($_SESSION["user_username"]) || in_array($query_object["object_id"], explode(',',$_SESSION['user_object_id'])) ){
 			?>
 			<a href="?Action_type=editobject&object_id=<?=$query_object["object_id"]?>"><img src="/gpsv3/images/icons/set.gif" border="0" alt="Edit"></a>
 			<!--<a href="?deleteobject=1&object_id=<?=$query_object["object_id"]?>" onclick="return confirm('Do you want to delete the device?')"><img src="/gpsv3/images/icons/minus.gif" border="0" alt="Delete"></a>-->
-			<?php
-			// }
-			?>
+			<?php }?>
 		</TD>
 	</TR>
 	<?php }?>
@@ -1292,9 +1077,7 @@ if(isset($_REQUEST["Action_type"])){
 <TR>
 	<TD align="left">&nbsp;</TD>
 	<TD align="right">
-		<? if($_SESSION["user_usergroup_id"]==1 || $_SESSION["user_usergroup_id"]==8){?>
 		<input type="button" class="loginsubmitlong" name="addobjectButton" value="Add Device" onclick="window.location='?Action_type=addNewobject'">
-		<? }?>
 	</TD>
 </TR>
 </TBODY>
